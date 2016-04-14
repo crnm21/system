@@ -24,6 +24,7 @@ const Usage = `
       [--cpu-interval i]
       [--extended]
       [--name name]
+      [--prefix prefix]
       [--disks disks]
     system-stats -h | --help
     system-stats --version
@@ -35,6 +36,7 @@ const Usage = `
     --cpu-interval i        cpu reporting interval [default: 5s]
     --extended              output additional extended metrics
     --name name             node name defaulting to hostname [default: hostname]
+    --prefix prefix         prefix to use in the node name
     --disks disks           comma separated mount points to check
     -h, --help              output help information
     -v, --version           output version
@@ -57,6 +59,13 @@ func main() {
 		log.Check(err)
 		name = host
 	}
+
+	prefix := args["--prefix"].(string)
+	if len(prefix) > 0 {
+		name = prefix + "." + name
+	}
+
+	log.Info("pushing stats as %s", name)
 
 	diskPaths := make([]string, 0)
 	if disks := args["--disks"]; disks != nil {

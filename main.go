@@ -11,6 +11,7 @@ import "github.com/statsd/client"
 import "github.com/tj/docopt"
 import "time"
 import "os"
+import "strings"
 
 const Version = "0.3.0"
 
@@ -23,6 +24,7 @@ const Usage = `
       [--cpu-interval i]
       [--extended]
       [--name name]
+      [--disks disks]
     system-stats -h | --help
     system-stats --version
 
@@ -33,6 +35,7 @@ const Usage = `
     --cpu-interval i        cpu reporting interval [default: 5s]
     --extended              output additional extended metrics
     --name name             node name defaulting to hostname [default: hostname]
+    --disks disks           comma separated mount points to check
     -h, --help              output help information
     -v, --version           output version
 `
@@ -55,10 +58,15 @@ func main() {
 		name = host
 	}
 
+	diskPaths := make([]string, 0)
+	if disks := args["--disks"]; disks != nil {
+		diskPaths = strings.Split(disks.(string), ",")
+	}
+
 	c := collector.New(namespace.New(client, name))
 	c.Add(memory.New(interval(args, "--memory-interval"), extended))
 	c.Add(cpu.New(interval(args, "--cpu-interval"), extended))
-	c.Add(disk.New(interval(args, "--disk-interval")))
+	c.Add(disk.New(interval(args, "--disk-interval"), diskPaths))
 
 	c.Start()
 	Shutdown()

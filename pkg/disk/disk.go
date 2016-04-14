@@ -20,13 +20,15 @@ type Disk struct {
 	Interval time.Duration
 	client   statsd.Client
 	exit     chan struct{}
+	paths    []string
 }
 
 // New disk resource.
-func New(interval time.Duration) *Disk {
+func New(interval time.Duration, paths []string) *Disk {
 	return &Disk{
 		Interval: interval,
 		exit:     make(chan struct{}),
+		paths:    paths,
 	}
 }
 
@@ -43,7 +45,7 @@ func (d *Disk) Start(client statsd.Client) error {
 }
 
 // paths returns the mount-point paths.
-func (d *Disk) paths() ([]string, error) {
+func (d *Disk) mountPointPaths() ([]string, error) {
 	mounts, err := fstab.ParseSystem()
 	if err != nil {
 		return nil, err
@@ -60,15 +62,17 @@ func (d *Disk) paths() ([]string, error) {
 // Report resources.
 func (d *Disk) Report() {
 	tick := time.Tick(d.Interval)
+	paths := d.paths
 
-	paths, err := d.paths()
-	if err != nil {
-		log.Error("disk: failed to read fstab: %s", err)
-		log.Error("disk: will not report")
-		return
+	if len(paths) == 0 {
+		paths, err := d.mountPointPaths()
+		if err != nil {
+			log.Error("disk: failed to read fstab: %s", err)
+			log.Error("disk: will not report")
+			return
+		}
+		log.Info("disk: discovered %v", paths)
 	}
-
-	log.Info("disk: discovered %v", paths)
 
 	for {
 		select {

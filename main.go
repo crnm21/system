@@ -12,8 +12,11 @@ import "github.com/tj/docopt"
 import "time"
 import "os"
 import "strings"
+import "net/http"
+import "io/ioutil"
 
-const Version = "0.3.0"
+const Version = "0.3.1"
+const EC2InstanceIdUrl = "http://169.254.169.254/latest/meta-data/instance-id"
 
 const Usage = `
   Usage:
@@ -58,6 +61,13 @@ func main() {
 		host, err := os.Hostname()
 		log.Check(err)
 		name = host
+	} else if "ec2-instance-id" == name {
+		resp, err := http.Get(EC2InstanceIdUrl)
+		log.Check(err)
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		log.Check(err)
+		name = string(body)
 	}
 
 	prefix := args["--prefix"].(string)

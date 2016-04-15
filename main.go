@@ -70,9 +70,9 @@ func main() {
 		name = string(body)
 	}
 
-	prefix := args["--prefix"].(string)
-	if len(prefix) > 0 {
-		name = prefix + "." + name
+	prefix := args["--prefix"]
+	if prefix != nil && len(prefix.(string)) > 0 {
+		name = prefix.(string) + "." + name
 	}
 
 	log.Info("pushing stats as %s", name)
